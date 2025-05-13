@@ -1,63 +1,103 @@
--- Netrw tree-style view
+-- 🗂️ Tree-style file view
 vim.cmd("let g:netrw_liststyle = 3")
 
--- Set <leader> key
+-- 🔑 Leader key
 vim.g.mapleader = " "
 
--- OPTIONS
-local opt = vim.opt
+-- 🌐 Encoding
+vim.opt.encoding = "utf-8"
+vim.opt.fileencoding = "utf-8"
 
--- Line numbers
-opt.number = true
-opt.relativenumber = true
+-- 🔢 Line Numbers
+vim.opt.number = true
+vim.opt.relativenumber = true
 
--- Tabs & indentation
-opt.tabstop = 2
-opt.shiftwidth = 2
-opt.expandtab = true
-opt.autoindent = true
+-- 📝 Tabs & Indentation
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = true
+vim.opt.autoindent = true
+vim.opt.smartindent = true
+vim.opt.smarttab = true
+vim.opt.breakindent = true
 
--- Wrapping
-opt.wrap = false
+-- 📜 Wrapping
+vim.opt.wrap = false
 
--- Search
-opt.ignorecase = true
-opt.smartcase = true
-opt.incsearch = true
+-- 🔍 Searching
+vim.opt.ignorecase = true
+vim.opt.smartcase = true
+vim.opt.incsearch = true
+vim.opt.hlsearch = true
+vim.opt.inccommand = "split"
 
--- Cursor & UI
-opt.cursorline = true
-opt.signcolumn = "yes"
-opt.showmatch = true
-opt.showmode = false
+-- 💡 UI & Cursor
+vim.opt.cursorline = true
+vim.opt.signcolumn = "yes"
+vim.opt.showmatch = true
+vim.opt.showmode = false
+vim.opt.showcmd = true
+vim.opt.cmdheight = vim.fn.has("nvim-0.8") == 1 and 0 or 1
+vim.opt.laststatus = 3
+vim.opt.scrolloff = 10
+vim.opt.winbar = "%=%m %f"
 
--- Colors
-opt.termguicolors = true
-opt.background = "dark"
+-- 🎨 Colors
+vim.opt.termguicolors = true
+vim.opt.background = "dark"
 
--- Backspace behavior
-opt.backspace = "indent,eol,start"
+-- 🔙 Backspace
+vim.opt.backspace = { "start", "eol", "indent" }
 
--- Clipboard
-opt.clipboard:append("unnamedplus")
+-- 📋 Clipboard
+vim.opt.clipboard:append("unnamedplus")
 
--- Window splits
-opt.splitright = true
-opt.splitbelow = true
+-- 🪟 Splits
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+vim.opt.splitkeep = "cursor"
 
--- Mouse support
-opt.mouse = "a"
+-- 🖱️ Mouse (disabled for keyboard-only users; change to 'a' if needed)
+vim.opt.mouse = "a"
 
--- Swap & Undo
-opt.swapfile = false
-opt.undofile = true
+-- 🧠 Completion Timing
+vim.opt.updatetime = 300
+vim.opt.timeoutlen = 500
 
--- Completion speed
-opt.updatetime = 300
-opt.timeoutlen = 500
+-- 💾 Swap & Undo
+vim.opt.swapfile = false
+vim.opt.undofile = true
+vim.opt.backup = false
+vim.opt.backupskip = { "/tmp/*", "/private/tmp/*" }
 
--- Persistent sessions
+-- 🧭 Shell
+vim.opt.shell = "zsh"
+
+-- 🧠 Wildignore & Path
+vim.opt.path:append({ "**" })
+vim.opt.wildignore:append({ "*/node_modules/*" })
+
+-- 🧙 Persistent Sessions
 vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
 
--- Winbar (file name and modified flag)
-vim.wo.winbar = "%=%m %f"
+-- ✨ Undercurl
+vim.cmd([[let &t_Cs = "\e[4:3m"]])
+vim.cmd([[let &t_Ce = "\e[4:0m"]])
+
+-- 🟨 Comment formatting
+vim.opt.formatoptions:append({ "r" })
+
+-- 📁 Filetype Detection
+vim.cmd([[au BufNewFile,BufRead *.astro setf astro]])
+vim.cmd([[au BufNewFile,BufRead Podfile setf ruby]])
+
+vim.filetype.add({
+  extension = {
+    mdx = "mdx",
+  },
+})
+
+-- ⚙️ LazyVim globals (optional)
+vim.g.lazyvim_prettier_needs_config = true
+vim.g.lazyvim_picker = "telescope"
+vim.g.lazyvim_cmp = "blink.cmp"

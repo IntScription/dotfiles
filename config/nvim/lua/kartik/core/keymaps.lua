@@ -9,13 +9,23 @@ keymap.set("n", "<leader>nh", ":nohl<CR>", { desc = "Clear search highlights" })
 keymap.set("n", "<leader>so", "<cmd>source %<CR>", { desc = "Source current file" })
 keymap.set("n", "<leader>sO", "<cmd>source $MYVIMRC<CR>", { desc = "Source Neovim config" })
 
--- saving and quitting
-keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "Save file" }) -- save
-keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = "Quit" }) -- quit
-keymap.set("n", "<leader>qa", "<cmd>q!<CR>", { desc = "Force quit" }) -- force quit without saving
-keymap.set("n", "<leader>wq", "<cmd>wq<CR>", { desc = "Save and quit" }) -- save and quit
-keymap.set("n", "<leader>wa", "<cmd>wa<CR>", { desc = "Write all buffers" }) -- save all
-keymap.set("n", "<leader>wqw", "<cmd>wqa<CR>", { desc = "Save all and quit" }) -- save all and quit
+-- Save file
+keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "󰆓 Save file" })
+
+-- Quit current window
+keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = " Quit window" })
+
+-- Force quit (without saving)
+keymap.set("n", "<leader>Q", "<cmd>q!<CR>", { desc = " Force quit" })
+
+-- Save and quit current window
+keymap.set("n", "<leader>x", "<cmd>wq<CR>", { desc = " Save & quit" })
+
+-- Save all buffers
+keymap.set("n", "<leader>W", "<cmd>wa<CR>", { desc = "󰅒 Save all buffers" })
+
+-- Save all and quit
+keymap.set("n", "<leader>X", "<cmd>wqa<CR>", { desc = "󰩈 Save all & quit" })
 
 -- split navigation with leader key
 keymap.set("n", "<leader>sh", "<C-w>h", { desc = "Move to left split" })
