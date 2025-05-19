@@ -38,7 +38,7 @@ keymap.set("n", "<leader>+", "<C-a>", { desc = "Increment number" }) -- incremen
 keymap.set("n", "<leader>-", "<C-x>", { desc = "Decrement number" }) -- decrement
 
 -- window management
-keymap.set("n", "setsv", "<C-w>v", { desc = "Split window vertically" }) -- split window vertically
+keymap.set("n", "sv", "<C-w>v", { desc = "Split window vertically" }) -- split window vertically
 keymap.set("n", "sh", "<C-w>s", { desc = "Split window horizontally" }) -- split window horizontally
 keymap.set("n", "se", "<C-w>=", { desc = "Make splits equal size" }) -- make split windows equal width & height
 keymap.set("n", "sc", "<cmd>close<CR>", { desc = "Close current split" }) -- close current split window
