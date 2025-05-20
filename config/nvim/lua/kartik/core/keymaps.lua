@@ -18,15 +18,6 @@ keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = " Quit window" })
 -- Force quit (without saving)
 keymap.set("n", "<leader>Q", "<cmd>q!<CR>", { desc = " Force quit" })
 
--- Save and quit current window
-keymap.set("n", "<leader>x", "<cmd>wq<CR>", { desc = " Save & quit" })
-
--- Save all buffers
-keymap.set("n", "<leader>W", "<cmd>wa<CR>", { desc = "󰅒 Save all buffers" })
-
--- Save all and quit
-keymap.set("n", "<leader>X", "<cmd>wqa<CR>", { desc = "󰩈 Save all & quit" })
-
 -- split navigation with leader key
 keymap.set("n", "<leader>sh", "<C-w>h", { desc = "Move to left split" })
 keymap.set("n", "<leader>sj", "<C-w>j", { desc = "Move to below split" })
