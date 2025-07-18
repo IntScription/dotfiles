@@ -147,19 +147,29 @@ PERL_MM_OPT="INSTALL_BASE=/Users/kartiksanil/perl5"; export PERL_MM_OPT;
 
 # Devlog shortcut
 devlog() {
-    cd ~/projects/learning/devlog
+    cd ~/projects/learning/devlog   # Your repo path
     date_today=$(date +%Y-%m-%d)
     logs_dir="logs/$date_today"
     filename="$logs_dir/index.md"
 
-    # Find yesterday's log (most recent existing one)
-    last_log=$(ls -d logs/*/ | sort -r | grep -v "$date_today" | head -n 1 | sed 's:logs/::; s:/::')
-    logs_dir_last="logs/$last_log/index.md"
-
     # Create today's log folder
     mkdir -p "$logs_dir"
 
-    # Create index.md if missing
+    # Get all existing logs sorted by date (oldest to newest)
+    logs=$(find logs -type d -mindepth 1 -maxdepth 1 | sort)
+    logs_array=($(basename -a $logs))
+
+    # Find previous and next logs
+    prev=""
+    next=""
+    for i in "${!logs_array[@]}"; do
+        if [[ "${logs_array[$i]}" == "$date_today" ]]; then
+            [[ $i -gt 0 ]] && prev="${logs_array[$((i - 1))]}"
+            [[ $((i + 1)) -lt ${#logs_array[@]} ]] && next="${logs_array[$((i + 1))]}"
+        fi
+    done
+
+    # Create today's index.md if not exists
     if [ ! -f "$filename" ]; then
         cat << EOF > "$filename"
 ---
@@ -178,34 +188,45 @@ permalink: /logs/$date_today/
 ## 🔥 What's Next
 -
 
+---
+
 <div class="nav-links">
+$( [ -n "$prev" ] && echo "<a href=\"{{ site.baseurl }}/logs/$prev/\">← Previous</a>" )
+$( [ -n "$next" ] && echo "<a href=\"{{ site.baseurl }}/logs/$next/\">Next →</a>" )
+</div>
 EOF
-
-        if [ -n "$last_log" ]; then
-            echo "<a href=\"{{ site.baseurl }}/logs/$last_log/\">← Previous</a>" >> "$filename"
-        fi
-
-        echo "</div>" >> "$filename"
     fi
 
-    # Update yesterday's log with Next → if exists
-    if [ -f "$logs_dir_last" ]; then
-        sed -i '' '/<div class="nav-links">/,/<\/div>/ s|</div>|<a href="{{ site.baseurl }}/logs/'"$date_today"'/">Next →</a></div>|' "$logs_dir_last"
+    # 🛠 Update previous day's index.md with "Next →"
+    if [ -n "$prev" ]; then
+        prev_file="logs/$prev/index.md"
+        # Remove old nav-links block
+        sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
+        # Re-add nav-links block with updated "next"
+        cat << EOF >> "$prev_file"
+
+---
+
+<div class="nav-links">
+<a href="{{ site.baseurl }}/logs/$prev/">← Previous</a>
+<a href="{{ site.baseurl }}/logs/$date_today/">Next →</a>
+</div>
+EOF
     fi
 
-    # Archive numbering
+    # Count logs from archive.md
     devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
     devlog_number=$((devlog_count + 1))
     new_entry="- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)"
 
-    # Archive update
+    # Append to archive.md if missing
     if ! grep -q "$date_today" archive.md; then
         sed -i '' "4i\\
 $new_entry
 " archive.md
     fi
 
-    # Update index.md with recent 5 logs
+    # Update index.md with last 5 logs
     recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
     cat << EOF > index.md
 ---
@@ -242,6 +263,7 @@ This devlog helps me:
 - [YouTube](https://www.youtube.com/@idkythisisme)
 EOF
 
+    # Open today's log in Neovim
     nvim "$filename"
 }
 
