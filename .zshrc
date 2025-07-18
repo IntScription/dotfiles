@@ -147,20 +147,19 @@ PERL_MM_OPT="INSTALL_BASE=/Users/kartiksanil/perl5"; export PERL_MM_OPT;
 
 # Devlog shortcut
 devlog() {
-    # Navigate to your devlog project directory
-    cd ~/projects/learning/devlog || return  # Add your own location
-
-    # Get today's date
+    cd ~/projects/learning/devlog
     date_today=$(date +%Y-%m-%d)
-
-    # Set log directory and filename
     logs_dir="logs/$date_today"
     filename="$logs_dir/index.md"
 
-    # Create today's folder if it doesn't exist
+    # Find yesterday's log (most recent existing one)
+    last_log=$(ls -d logs/*/ | sort -r | grep -v "$date_today" | head -n 1 | sed 's:logs/::; s:/::')
+    logs_dir_last="logs/$last_log/index.md"
+
+    # Create today's log folder
     mkdir -p "$logs_dir"
 
-    # Create the index.md file with prefilled template if it doesn't exist
+    # Create index.md if missing
     if [ ! -f "$filename" ]; then
         cat << EOF > "$filename"
 ---
@@ -178,30 +177,36 @@ permalink: /logs/$date_today/
 
 ## 🔥 What's Next
 -
+
+<div class="nav-links">
 EOF
+
+        if [ -n "$last_log" ]; then
+            echo "<a href=\"{{ site.baseurl }}/logs/$last_log/\">← Previous</a>" >> "$filename"
+        fi
+
+        echo "</div>" >> "$filename"
     fi
 
-    # Count existing devlogs for numbering from archive.md
+    # Update yesterday's log with Next → if exists
+    if [ -f "$logs_dir_last" ]; then
+        sed -i '' '/<div class="nav-links">/,/<\/div>/ s|</div>|<a href="{{ site.baseurl }}/logs/'"$date_today"'/">Next →</a></div>|' "$logs_dir_last"
+    fi
+
+    # Archive numbering
     devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
     devlog_number=$((devlog_count + 1))
     new_entry="- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)"
 
-    # Append to archive.md after line 4 if this date is not already present
+    # Archive update
     if ! grep -q "$date_today" archive.md; then
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "4i\\
+        sed -i '' "4i\\
 $new_entry
 " archive.md
-        else
-            sed -i "4i\\
-$new_entry
-" archive.md
-        fi
     fi
 
-    # Update index.md to show only the 5 most recent devlogs from archive.md
+    # Update index.md with recent 5 logs
     recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
-
     cat << EOF > index.md
 ---
 layout: default
@@ -216,7 +221,6 @@ I document my progress, projects, learning experiences, and reflections as I bui
 ---
 
 ## 📅 Recent Devlog Entries
-
 $recent_entries
 
 [→ See Full Archive]({{ site.baseurl }}/archive/)
@@ -238,7 +242,6 @@ This devlog helps me:
 - [YouTube](https://www.youtube.com/@idkythisisme)
 EOF
 
-    # Open Neovim on today's log file
     nvim "$filename"
 }
 
