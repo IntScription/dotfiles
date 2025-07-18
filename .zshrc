@@ -147,20 +147,24 @@ PERL_MM_OPT="INSTALL_BASE=/Users/kartiksanil/perl5"; export PERL_MM_OPT;
 
 # Devlog shortcut
 devlog() {
-    cd ~/projects/learning/devlog   # Your specific repo path
+    # Navigate to your devlog project directory
+    cd ~/projects/learning/devlog || return  # Add your own location
+
+    # Get today's date
     date_today=$(date +%Y-%m-%d)
+
+    # Set log directory and filename
     logs_dir="logs/$date_today"
     filename="$logs_dir/index.md"
 
-    # Create today's log folder
+    # Create today's folder if it doesn't exist
     mkdir -p "$logs_dir"
 
-    # Create index.md with your template if it doesn't exist
+    # Create the index.md file with prefilled template if it doesn't exist
     if [ ! -f "$filename" ]; then
         cat << EOF > "$filename"
 ---
 layout: default
-title: Devlog - $date_today
 permalink: /logs/$date_today/
 ---
 
@@ -177,20 +181,27 @@ permalink: /logs/$date_today/
 EOF
     fi
 
-    # Count existing devlogs for numbering (archive.md as source of truth)
+    # Count existing devlogs for numbering from archive.md
     devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
     devlog_number=$((devlog_count + 1))
     new_entry="- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)"
 
-    # Append to archive.md if missing
+    # Append to archive.md after line 4 if this date is not already present
     if ! grep -q "$date_today" archive.md; then
-        sed -i '' "4i\\
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "4i\\
 $new_entry
 " archive.md
+        else
+            sed -i "4i\\
+$new_entry
+" archive.md
+        fi
     fi
 
-    # Update index.md: keep only recent 5 logs
+    # Update index.md to show only the 5 most recent devlogs from archive.md
     recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
+
     cat << EOF > index.md
 ---
 layout: default
@@ -205,6 +216,7 @@ I document my progress, projects, learning experiences, and reflections as I bui
 ---
 
 ## 📅 Recent Devlog Entries
+
 $recent_entries
 
 [→ See Full Archive]({{ site.baseurl }}/archive/)
@@ -226,7 +238,7 @@ This devlog helps me:
 - [YouTube](https://www.youtube.com/@idkythisisme)
 EOF
 
-    # Open Neovim on the new file
+    # Open Neovim on today's log file
     nvim "$filename"
 }
 
