@@ -144,3 +144,50 @@ PERL5LIB="/Users/kartiksanil/perl5/lib/perl5${PERL5LIB:+:${PERL5LIB}}"; export P
 PERL_LOCAL_LIB_ROOT="/Users/kartiksanil/perl5${PERL_LOCAL_LIB_ROOT:+:${PERL_LOCAL_LIB_ROOT}}"; export PERL_LOCAL_LIB_ROOT;
 PERL_MB_OPT="--install_base \"/Users/kartiksanil/perl5\""; export PERL_MB_OPT;
 PERL_MM_OPT="INSTALL_BASE=/Users/kartiksanil/perl5"; export PERL_MM_OPT;
+
+# Devlog shortcut
+devlog() {
+    cd ~/projects/learning/devlog   # Your specific repo path
+    date_today=$(date +%Y-%m-%d)
+    logs_dir="logs/$date_today"
+    filename="$logs_dir/index.md"
+
+    # Create today's log folder
+    mkdir -p "$logs_dir"
+
+    # Create index.md with your template if it doesn't exist
+    if [ ! -f "$filename" ]; then
+        cat << EOF > "$filename"
+---
+layout: default
+title: Devlog - $date_today
+permalink: /logs/$date_today/
+---
+
+# Devlog - $date_today
+
+## 🚀 What I Did
+-
+
+## 🧠 What I Learned
+-
+
+## 🔥 What's Next
+-
+EOF
+    fi
+
+    # Count existing devlogs for numbering
+    devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' index.md | wc -l | awk '{print $1}')
+    devlog_number=$((devlog_count + 1))
+
+    # Append link to homepage index.md if missing
+    if ! grep -q "$date_today" index.md; then
+        sed -i '' "/## 📅 Devlog Entries/a\\
+- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)
+" index.md
+    fi
+
+    # Open Neovim on the new file
+    nvim "$filename"
+}
