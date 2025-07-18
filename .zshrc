@@ -177,17 +177,56 @@ permalink: /logs/$date_today/
 EOF
     fi
 
-    # Count existing devlogs for numbering
-    devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' index.md | wc -l | awk '{print $1}')
+    # Count existing devlogs for numbering (archive.md as source of truth)
+    devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
     devlog_number=$((devlog_count + 1))
+    new_entry="- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)"
 
-    # Append link to homepage index.md if missing
-    if ! grep -q "$date_today" index.md; then
-        sed -i '' "/## 📅 Devlog Entries/a\\
-- [$date_today — Devlog #$devlog_number](/devlog/logs/$date_today/)
-" index.md
+    # Append to archive.md if missing
+    if ! grep -q "$date_today" archive.md; then
+        sed -i '' "4i\\
+$new_entry
+" archive.md
     fi
+
+    # Update index.md: keep only recent 5 logs
+    recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
+    cat << EOF > index.md
+---
+layout: default
+title: Hello Devs 📓
+---
+
+<link rel="stylesheet" href="{{ '/assets/css/style.css' | relative_url }}">
+
+Welcome to my public developer log.  
+I document my progress, projects, learning experiences, and reflections as I build and improve my skills in software engineering, AI, and development tools.
+
+---
+
+## 📅 Recent Devlog Entries
+$recent_entries
+
+[→ See Full Archive]({{ site.baseurl }}/archive/)
+
+---
+
+## 🎯 Why This Devlog Exists
+I believe in **learning in public**.
+This devlog helps me:
+- Track my progress consistently
+- Reflect on my challenges and breakthroughs
+- Stay accountable to my personal and professional goals
+- Share my journey with others
+
+---
+
+## 🔗 Connect With Me
+- [GitHub](https://github.com/IntScription)
+- [YouTube](https://www.youtube.com/@idkythisisme)
+EOF
 
     # Open Neovim on the new file
     nvim "$filename"
 }
+
