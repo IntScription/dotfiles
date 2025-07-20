@@ -199,7 +199,6 @@ EOF
     if ! grep -q "/logs/$date_today/" "$prev_file"; then
         sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
         cat >> "$prev_file" <<EOF
-
 ---
 
 <div class="nav-links">
