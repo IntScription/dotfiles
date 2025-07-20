@@ -194,7 +194,9 @@ EOF
     fi
 
     if [[ -n "$prev" ]]; then
-        prev_file="logs/$prev/index.md"
+    prev_file="logs/$prev/index.md"
+    # Only update if there isn't already a "Next →" pointing to this date
+    if ! grep -q "/logs/$date_today/" "$prev_file"; then
         sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
         cat >> "$prev_file" <<EOF
 
