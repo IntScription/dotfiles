@@ -2,17 +2,19 @@
 # ░░ Powerlevel10k Prompt Setup ░░
 # ────────────────────────────────────────────────
 
-# Instant prompt (keep near top of .zshrc)
+# Quiet Powerlevel10k instant prompt warning
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+# Instant prompt (must be near the top)
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
 # Load Powerlevel10k theme
 source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
-
-# Prompt customization
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
+# Useful aliases
 alias reload-zsh="source ~/.zshrc"
 alias edit-zsh="nvim ~/.zshrc"
 
@@ -20,7 +22,7 @@ alias edit-zsh="nvim ~/.zshrc"
 # ░░ Zsh History & Key Bindings ░░
 # ────────────────────────────────────────────────
 
-HISTFILE=$HOME/.zhistory
+HISTFILE="$HOME/.zhistory"
 SAVEHIST=1000
 HISTSIZE=999
 setopt share_history hist_expire_dups_first hist_ignore_dups hist_verify
@@ -33,70 +35,69 @@ bindkey '^[[B' history-search-forward
 # ░░ Zsh Plugins ░░
 # ────────────────────────────────────────────────
 
-# Autosuggestions
-source $(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-
-# Syntax highlighting
-source $(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source "$(brew --prefix)/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+source "$(brew --prefix)/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
 
 # ────────────────────────────────────────────────
 # ░░ Environment Variables ░░
 # ────────────────────────────────────────────────
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+export EDITOR="nvim"
 
-export PATH="$PATH:/Users/joseanmartinez/.spicetify"
+# Node
+export NVM_DIR="$HOME/.nvm"
+[[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
+[[ -s "$NVM_DIR/bash_completion" ]] && source "$NVM_DIR/bash_completion"
+
+# Ruby
+export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 export PATH="$HOME/.rbenv/shims:$PATH"
+
+# Perl local install
+export PATH="$HOME/perl5/bin:$PATH"
+export PERL5LIB="$HOME/perl5/lib/perl5:$PERL5LIB"
+export PERL_LOCAL_LIB_ROOT="$HOME/perl5:$PERL_LOCAL_LIB_ROOT"
+export PERL_MB_OPT="--install_base \"$HOME/perl5\""
+export PERL_MM_OPT="INSTALL_BASE=$HOME/perl5"
+
+# Spicetify
+export PATH="$PATH:/Users/joseanmartinez/.spicetify"
 
 # ────────────────────────────────────────────────
 # ░░ FZF Setup ░░
 # ────────────────────────────────────────────────
 
-# Load fzf and key bindings
 eval "$(fzf --zsh)"
 [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
 [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
 
-# FZF Theme Colors
-fg="#CBE0F0"
-bg="#011628"
-bg_highlight="#143652"
-purple="#B388FF"
-blue="#06BCE4"
-cyan="#2CF9ED"
+# FZF Theme
+export FZF_DEFAULT_OPTS="
+  --color=fg:#CBE0F0,bg:#011628,hl:#B388FF
+  --color=fg+:#CBE0F0,bg+:#143652,hl+:#B388FF
+  --color=info:#06BCE4,prompt:#2CF9ED,pointer:#2CF9ED,marker:#2CF9ED,spinner:#2CF9ED,header:#2CF9ED
+"
 
-export FZF_DEFAULT_OPTS="--color=fg:${fg},bg:${bg},hl:${purple},fg+:${fg},bg+:${bg_highlight},hl+:${purple},info:${blue},prompt:${cyan},pointer:${cyan},marker:${cyan},spinner:${cyan},header:${cyan}"
-
-# Use fd (faster alternative to find)
+# Use `fd` with FZF
 export FZF_DEFAULT_COMMAND="fd --hidden --strip-cwd-prefix --exclude .git"
 export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 export FZF_ALT_C_COMMAND="fd --type=d --hidden --strip-cwd-prefix --exclude .git"
 
-_fzf_compgen_path() {
-  fd --hidden --exclude .git . "$1"
-}
-_fzf_compgen_dir() {
-  fd --type=d --hidden --exclude .git . "$1"
-}
+_fzf_compgen_path() { fd --hidden --exclude .git . "$1"; }
+_fzf_compgen_dir() { fd --type=d --hidden --exclude .git . "$1"; }
 
-# FZF Preview Customization
-show_file_or_dir_preview="if [ -d {} ]; then eza --tree --color=always {} | head -200; else bat -n --color=always --line-range :500 {}; fi"
-
-export FZF_CTRL_T_OPTS="--preview '$show_file_or_dir_preview'"
+# Preview customization
+preview_cmd="if [ -d {} ]; then eza --tree --color=always {} | head -200; else bat -n --color=always --line-range :500 {}; fi"
+export FZF_CTRL_T_OPTS="--preview '$preview_cmd'"
 export FZF_ALT_C_OPTS="--preview 'eza --tree --color=always {} | head -200'"
 
-# Custom FZF preview runners
 _fzf_comprun() {
-  local command=$1
-  shift
-
+  local command=$1; shift
   case "$command" in
     cd)           fzf --preview 'eza --tree --color=always {} | head -200' "$@" ;;
-    export|unset) fzf --preview "eval 'echo \${}'"                         "$@" ;;
-    ssh)          fzf --preview 'dig {}'                                   "$@" ;;
-    *)            fzf --preview "$show_file_or_dir_preview"               "$@" ;;
+    export|unset) fzf --preview "eval 'echo \${}'" "$@" ;;
+    ssh)          fzf --preview 'dig {}' "$@" ;;
+    *)            fzf --preview "$preview_cmd" "$@" ;;
   esac
 }
 
@@ -104,70 +105,62 @@ _fzf_comprun() {
 # ░░ CLI Tool Enhancements ░░
 # ────────────────────────────────────────────────
 
-# Bat (better cat)
+# Bat
 export BAT_THEME=tokyonight_night
 
-# Eza (better ls)
+# Eza
 alias ls="eza --icons=always"
 
-# TheFuck (command correction)
-eval $(thefuck --alias)
-eval $(thefuck --alias fk)
+# TheFuck
+eval "$(thefuck --alias)"
+eval "$(thefuck --alias fk)"
 
-# Zoxide (better cd)
+# Zoxide
 eval "$(zoxide init zsh)"
 alias cd="z"
 
-# --- Yazi Function: Launches Yazi and Returns to the Selected Directory ---
-export EDITOR="nvim"
- 
+# Mise
+eval "$(mise activate zsh)"
+
+# ────────────────────────────────────────────────
+# ░░ Yazi Integration ░░
+# ────────────────────────────────────────────────
+
 function y() {
-	# Create a temporary file to store the new working directory
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	
-	# Launch Yazi with any passed arguments, using the temp file to store the new directory path
-	yazi "$@" --cwd-file="$tmp"
-	
-	# If the temp file contains a valid and different directory path, change to that directory
-	if cwd="$(command cat -- "$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-		builtin cd -- "$cwd"
-	fi
-	
-	# Remove the temporary file
-	rm -f -- "$tmp"
-} 
+  local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(<"$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+    builtin cd -- "$cwd"
+  fi
+  rm -f -- "$tmp"
+}
 
-eval "$(mise activate zsh)"  # or "bash" if using bash
+# ────────────────────────────────────────────────
+# ░░ Devlog Helper ░░
+# ────────────────────────────────────────────────
 
-export PATH="/Users/kartiksanil/perl5/bin:$PATH"
-export PERL5LIB="/Users/kartiksanil/perl5/lib/perl5:$PERL5LIB"
-export PERL_LOCAL_LIB_ROOT="/Users/kartiksanil/perl5:$PERL_LOCAL_LIB_ROOT"
-export PERL_MB_OPT="--install_base \"/Users/kartiksanil/perl5\""
-export PERL_MM_OPT="INSTALL_BASE=/Users/kartiksanil/perl5"
-
-# Devlog shortcut
 devlog() {
-    cd ~/projects/learning/devlog || return
-    date_today=$(date +%Y-%m-%d)
-    logs_dir="logs/$date_today"
-    filename="$logs_dir/index.md"
+  cd ~/projects/learning/devlog || return
+  local date_today logs_dir filename prev next i
 
-    mkdir -p "$logs_dir"
+  date_today=$(date +%Y-%m-%d)
+  logs_dir="logs/$date_today"
+  filename="$logs_dir/index.md"
 
-    logs=($(find logs -type d -mindepth 1 -maxdepth 1 -exec basename {} \; | sort))
+  mkdir -p "$logs_dir"
 
-    prev=""
-    next=""
-    for ((i = 0; i < ${#logs[@]}; i++)); do
-        if [[ "${logs[$i]}" == "$date_today" ]]; then
-            ((i > 0)) && prev="${logs[$((i-1))]}"
-            ((i < ${#logs[@]} - 1)) && next="${logs[$((i+1))]}"
-            break
-        fi
-    done
+  logs=($(find logs -type d -mindepth 1 -maxdepth 1 -exec basename {} \; | sort))
+  prev=""; next=""
+  for ((i = 0; i < ${#logs[@]}; i++)); do
+    if [[ "${logs[$i]}" == "$date_today" ]]; then
+      ((i > 0)) && prev="${logs[$((i-1))]}"
+      ((i < ${#logs[@]} - 1)) && next="${logs[$((i+1))]}"
+      break
+    fi
+  done
 
-    if [[ ! -f "$filename" ]]; then
-        cat > "$filename" <<EOF
+  if [[ ! -f "$filename" ]]; then
+    cat > "$filename" <<EOF
 ---
 layout: default
 permalink: /logs/$date_today/
@@ -191,14 +184,13 @@ ${prev:+<a href="{{ site.baseurl }}/logs/$prev/">← Previous</a>}
 ${next:+<a href="{{ site.baseurl }}/logs/$next/">Next →</a>}
 </div>
 EOF
-    fi
+  fi
 
-    if [[ -n "$prev" ]]; then
+  if [[ -n "$prev" ]]; then
     prev_file="logs/$prev/index.md"
-    # Only update if there isn't already a "Next →" pointing to this date
     if ! grep -q "/logs/$date_today/" "$prev_file"; then
-        sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
-        cat >> "$prev_file" <<EOF
+      sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
+      cat >> "$prev_file" <<EOF
 ---
 
 <div class="nav-links">
@@ -213,15 +205,15 @@ EOF
     new_entry="- [$date_today — Devlog #$devlog_number]({{ site.baseurl }}/logs/$date_today/)"
 
     if ! grep -q "$date_today" archive.md; then
-        awk -v new="$new_entry" '
-        BEGIN { found = 0 }
-        {
-            print $0
-            if ($0 ~ /## 📅 2025 Logs/ && found == 0) {
-                print new
-                found = 1
-            }
-        }' archive.md > archive_tmp.md && mv archive_tmp.md archive.md
+      awk -v new="$new_entry" '
+      BEGIN { found = 0 }
+      {
+        print $0
+        if ($0 ~ /## 📅 2025 Logs/ && found == 0) {
+          print new
+          found = 1
+        }
+      }' archive.md > archive_tmp.md && mv archive_tmp.md archive.md
     fi
 
     recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
@@ -259,9 +251,8 @@ This devlog helps me:
 - [GitHub](https://github.com/IntScription)
 - [YouTube](https://www.youtube.com/@idkythisisme)
 EOF
+  fi
 
-    nvim "$filename"
+  nvim "$filename"
 }
-# Ruby
-export PATH="/opt/homebrew/opt/ruby/bin:$PATH"
 
