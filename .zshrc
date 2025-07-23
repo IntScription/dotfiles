@@ -258,4 +258,3 @@ EOF
 
   nvim "$filename"
 }
-
