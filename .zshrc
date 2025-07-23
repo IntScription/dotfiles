@@ -186,6 +186,7 @@ ${next:+<a href="{{ site.baseurl }}/logs/$next/">Next →</a>}
 EOF
   fi
 
+  # --- NAVIGATION UPDATE for previous log
   if [[ -n "$prev" ]]; then
     prev_file="logs/$prev/index.md"
     if ! grep -q "/logs/$date_today/" "$prev_file"; then
@@ -199,25 +200,28 @@ EOF
 </div>
 EOF
     fi
+  fi
 
-    devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
-    devlog_number=$((devlog_count + 1))
-    new_entry="- [$date_today — Devlog #$devlog_number]({{ site.baseurl }}/logs/$date_today/)"
+  # --- ARCHIVE ENTRY (always run)
+  devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
+  devlog_number=$((devlog_count + 1))
+  new_entry="- [$date_today — Devlog #$devlog_number]({{site.baseurl}}/logs/$date_today/)"
 
-    if ! grep -q "$date_today" archive.md; then
-      awk -v new="$new_entry" '
-      BEGIN { found = 0 }
-      {
-        print $0
-        if ($0 ~ /## 📅 2025 Logs/ && found == 0) {
-          print new
-          found = 1
-        }
-      }' archive.md > archive_tmp.md && mv archive_tmp.md archive.md
-    fi
+  if ! grep -q "$date_today" archive.md; then
+    awk -v new="$new_entry" '
+    BEGIN { found = 0 }
+    {
+      print $0
+      if ($0 ~ /## 📅 2025 Logs/ && found == 0) {
+        print new
+        found = 1
+      }
+    }' archive.md > archive_tmp.md && mv archive_tmp.md archive.md
+  fi
 
-    recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
-    cat > index.md <<EOF
+  # --- HOMEPAGE UPDATE (always run)
+  recent_entries=$(grep '\- \[.*Devlog' archive.md | head -n 5)
+  cat > index.md <<EOF
 ---
 layout: default
 title: Hello Devs 📓
@@ -251,7 +255,6 @@ This devlog helps me:
 - [GitHub](https://github.com/IntScription)
 - [YouTube](https://www.youtube.com/@idkythisisme)
 EOF
-  fi
 
   nvim "$filename"
 }
