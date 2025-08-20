@@ -141,18 +141,21 @@ function y() {
 
 devlog() {
   cd ~/projects/learning/devlog || return
-  local date_today logs_dir filename prev next i
+  local date_today logs_dir filename prev next prev_prev i
 
   date_today=$(date +%Y-%m-%d)
   logs_dir="logs/$date_today"
   filename="$logs_dir/index.md"
   mkdir -p "$logs_dir"
 
-  IFS=$'\n' read -r -d '' -a logs < <(find logs -type d -mindepth 1 -maxdepth 1 -exec basename {} \; | sort && printf '\0')
-  prev=""; next=""
+  # zsh-friendly: get sorted list of log dirs
+  logs=("${(@f)$(find logs -type d -mindepth 1 -maxdepth 1 -exec basename {} \; | sort)}")
+
+  prev=""; next=""; prev_prev=""
   for ((i = 0; i < ${#logs[@]}; i++)); do
     if [[ "${logs[$i]}" == "$date_today" ]]; then
       ((i > 0)) && prev="${logs[$((i-1))]}"
+      ((i > 1)) && prev_prev="${logs[$((i-2))]}"
       ((i < ${#logs[@]} - 1)) && next="${logs[$((i+1))]}"
       break
     fi
@@ -178,9 +181,7 @@ permalink: /logs/$date_today/
 ## 🔥 What's Next
 
 -
-
----
-
+<!-- NAV-START -->
 $(
   nav_line=""
   if [[ -n "$prev" && -n "$next" ]]; then
@@ -190,15 +191,20 @@ $(
   elif [[ -n "$next" ]]; then
     nav_line="[Next →]({{site.baseurl}}/logs/$next/)"
   fi
-  printf "%s\n" "$nav_line"
+  [[ -n "$nav_line" ]] && printf "%s\n" "---\n$nav_line"
 )
+<!-- NAV-END -->
 EOF
   else
-    # Update existing log's navigation
-    sed -i '' -E '/^\[← Previous\].*|^\[Next →\].*/d' "$filename"
-    # Remove trailing --- before nav
-    sed -i '' -E '/^---$/d' "$filename"
-    # Add updated navigation
+    # Clean existing nav (block or single-line), tolerate leading spaces
+    if grep -q '<!-- NAV-START -->' "$filename"; then
+      sed -i '' '/<!-- NAV-START -->/,/<!-- NAV-END -->/d' "$filename"
+    else
+      sed -i '' -E '/^[[:space:]]*\[← Previous\].*|^[[:space:]]*\[Next →\].*/d' "$filename"
+    fi
+    # Drop orphan trailing --- at EOF if present
+    sed -i '' -E '${/^[[:space:]]*---[[:space:]]*$/d;}' "$filename"
+
     nav_line=""
     if [[ -n "$prev" && -n "$next" ]]; then
       nav_line="[← Previous]({{site.baseurl}}/logs/$prev/) | [Next →]({{site.baseurl}}/logs/$next/)"
@@ -210,27 +216,37 @@ EOF
     if [[ -n "$nav_line" ]]; then
       cat >> "$filename" <<EOF
 
+<!-- NAV-START -->
 ---
-
 $nav_line
+<!-- NAV-END -->
 EOF
     fi
   fi
 
-  # Update previous log nav (convert old HTML nav if present; add Markdown nav)
+  # Update previous log nav
   if [[ -n "$prev" ]]; then
     prev_file="logs/$prev/index.md"
     if [[ -f "$prev_file" ]] && ! grep -q "/logs/$date_today/" "$prev_file"; then
-      # Remove old HTML nav block
+      # Remove old HTML nav if any
       sed -i '' '/<div class="nav-links">/,/<\/div>/d' "$prev_file"
-      # Remove any existing Markdown nav lines
-      sed -i '' -E '/^\[← Previous\].*|^\[Next →\].*/d' "$prev_file"
-      # Append new nav
+      # Remove any existing nav (block or single-line), tolerate leading spaces
+      if grep -q '<!-- NAV-START -->' "$prev_file"; then
+        sed -i '' '/<!-- NAV-START -->/,/<!-- NAV-END -->/d' "$prev_file"
+      else
+        sed -i '' -E '/^[[:space:]]*\[← Previous\].*|^[[:space:]]*\[Next →\].*/d' "$prev_file"
+      fi
+      # Drop orphan trailing --- at EOF if present
+      sed -i '' -E '${/^[[:space:]]*---[[:space:]]*$/d;}' "$prev_file"
+
+      nav_line="[Next →]({{site.baseurl}}/logs/$date_today/)"
+      [[ -n "$prev_prev" ]] && nav_line="[← Previous]({{site.baseurl}}/logs/$prev_prev/) | $nav_line"
       cat >> "$prev_file" <<EOF
 
+<!-- NAV-START -->
 ---
-
-[← Previous]({{site.baseurl}}/logs/$prev/) | [Next →]({{site.baseurl}}/logs/$date_today/)
+$nav_line
+<!-- NAV-END -->
 EOF
     fi
   fi
@@ -239,7 +255,6 @@ EOF
   devlog_count=$(grep -o '\[.*— Devlog #[0-9]*\]' archive.md | wc -l | awk '{print $1}')
   devlog_number=$((devlog_count + 1))
   new_entry="- [$date_today — Devlog #$devlog_number]({{site.baseurl}}/logs/$date_today/)"
-
   if ! grep -q "$date_today" archive.md; then
     awk -v new="$new_entry" '
       BEGIN { added = 0 }
@@ -248,9 +263,8 @@ EOF
     ' archive.md > archive_tmp.md && mv archive_tmp.md archive.md
   fi
 
-  # Update homepage recent entries
+  # Homepage recent entries
   recent_entries=$(grep '^- \[.*Devlog' archive.md | head -n 5)
-
   if grep -q '<!-- DEVLOG-RECENT-START -->' index.md; then
     awk -v new="$recent_entries" '
       BEGIN { inblock = 0 }
@@ -272,6 +286,32 @@ EOF
       insection && /^- \[/ { next }
       { print }
     ' index.md > index_tmp.md && mv index_tmp.md index.md
+  fi
+
+  # Ensure current file ends with a nav block (final safety)
+  if grep -q '<!-- NAV-START -->' "$filename"; then
+    sed -i '' '/<!-- NAV-START -->/,/<!-- NAV-END -->/d' "$filename"
+  else
+    sed -i '' -E '/^[[:space:]]*\[← Previous\].*|^[[:space:]]*\[Next →\].*/d' "$filename"
+  fi
+  sed -i '' -E '${/^[[:space:]]*---[[:space:]]*$/d;}' "$filename"
+
+  nav_line=""
+  if [[ -n "$prev" && -n "$next" ]]; then
+    nav_line="[← Previous]({{site.baseurl}}/logs/$prev/) | [Next →]({{site.baseurl}}/logs/$next/)"
+  elif [[ -n "$prev" ]]; then
+    nav_line="[← Previous]({{site.baseurl}}/logs/$prev/)"
+  elif [[ -n "$next" ]]; then
+    nav_line="[Next →]({{site.baseurl}}/logs/$next/)"
+  fi
+  if [[ -n "$nav_line" ]]; then
+    cat >> "$filename" <<EOF
+
+<!-- NAV-START -->
+---
+$nav_line
+<!-- NAV-END -->
+EOF
   fi
 
   nvim "$filename"
