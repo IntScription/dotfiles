@@ -43,6 +43,30 @@ vim.api.nvim_create_autocmd("FileType", {
   end,
 })
 
+-- Auto-fix Markdown with markdownlint on save for files inside the dotfiles repo
+vim.api.nvim_create_autocmd("BufWritePost", {
+  pattern = { "*.md", "*.markdown" },
+  callback = function(args)
+    local filepath = args.match
+    local root = "/Users/kartiksanil/dotfiles/"
+    if string.sub(filepath, 1, #root) == root then
+      local fix_script = root .. "scripts/fix_markdown.sh"
+      if vim.fn.filereadable(fix_script) == 1 then
+        vim.fn.jobstart({ fix_script, filepath }, {
+          detach = true,
+          on_exit = function()
+            -- Reload buffer from disk if it changed
+            local cur = vim.api.nvim_get_current_buf()
+            if vim.api.nvim_buf_is_loaded(cur) then
+              vim.cmd("checktime")
+            end
+          end,
+        })
+      end
+    end
+  end,
+})
+
 -- Restore cursor to last position when reopening a file
 vim.api.nvim_create_autocmd("BufReadPost", {
   callback = function()

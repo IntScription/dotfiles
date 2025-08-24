@@ -17,6 +17,7 @@ source /opt/homebrew/share/powerlevel10k/powerlevel10k.zsh-theme
 # Useful aliases
 alias reload-zsh="source ~/.zshrc"
 alias edit-zsh="nvim ~/.zshrc"
+alias fixmd="/Users/kartiksanil/dotfiles/scripts/fix_markdown.sh"
 
 # ────────────────────────────────────────────────
 # ░░ Zsh History & Key Bindings ░░

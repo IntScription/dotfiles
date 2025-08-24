@@ -89,6 +89,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   brew_install ripgrep
   brew_install bat
   brew_install fd
+  brew_install ruby
+  brew_install markdownlint-cli
+  brew_install markdownlint-cli2
   # Install Nerd Fonts for Alacritty and iTerm2
   brew tap homebrew/cask-fonts
   brew_cask_install font-meslo-lg-nerd-font
@@ -121,6 +124,43 @@ if command -v nvim >/dev/null 2>&1; then
   nvim --headless "+Lazy! sync" +qa || true
 else
   echo -e "${yellow}Neovim not found, skipping Neovim plugin installation.${reset}"
+fi
+
+# Ensure scripts are executable
+chmod +x "$DOTFILES_DIR/scripts/fix_markdown.sh" 2>/dev/null || true
+
+# Setup Devlog repository (clone or update) and install Jekyll deps
+DEVLOG_REPO_URL="https://github.com/IntScription/devlog.git"
+DEVLOG_DIR="$HOME/projects/learning/devlog"
+DEVLOG_PARENT_DIR="$(dirname "$DEVLOG_DIR")"
+
+echo -e "${green}==> Setting up Devlog at $DEVLOG_DIR...${reset}"
+mkdir -p "$DEVLOG_PARENT_DIR"
+if [ -d "$DEVLOG_DIR/.git" ]; then
+  echo -e "${green}Devlog repo exists. Pulling latest changes...${reset}"
+  git -C "$DEVLOG_DIR" pull --rebase --autostash || git -C "$DEVLOG_DIR" pull --rebase || true
+elif [ -d "$DEVLOG_DIR" ]; then
+  echo -e "${yellow}$DEVLOG_DIR exists but is not a git repo. Skipping clone.${reset}"
+else
+  echo -e "${green}Cloning Devlog repo...${reset}"
+  git clone "$DEVLOG_REPO_URL" "$DEVLOG_DIR"
+fi
+
+if [ -d "$DEVLOG_DIR" ]; then
+  # Ensure bundler is available, then install gems
+  if ! command -v bundle >/dev/null 2>&1; then
+    if command -v gem >/dev/null 2>&1; then
+      echo -e "${yellow}Bundler not found. Installing bundler gem...${reset}"
+      gem install bundler || true
+    else
+      echo -e "${yellow}RubyGems not available. Please ensure Ruby is installed if you plan to serve the site locally.${reset}"
+    fi
+  fi
+  if command -v bundle >/dev/null 2>&1; then
+    echo -e "${green}==> Installing Devlog Ruby gems (bundle install)...${reset}"
+    ( cd "$DEVLOG_DIR" && bundle install ) || true
+  fi
+  echo -e "${green}Devlog ready. To serve locally: cd \"$DEVLOG_DIR\" && bundle exec jekyll serve${reset}"
 fi
 
 echo -e "${green}All done! Please restart your terminal or source your shell config.${reset}" 
