@@ -11,7 +11,7 @@ keymap.set("n", "<leader>so", "<cmd>source %<CR>", { desc = "Source current file
 keymap.set("n", "<leader>sO", "<cmd>source $MYVIMRC<CR>", { desc = "Source Neovim config" })
 
 -- Save file
-keymap.set("n", "<leader>w", "<cmd>w<CR>", { desc = "󰆓 Save file" })
+keymap.set("n", "<leader>W", "<cmd>w<CR>", { desc = "󰆓 Save file" })
 
 -- Quit current window
 keymap.set("n", "<leader>q", "<cmd>q<CR>", { desc = " Quit window" })
