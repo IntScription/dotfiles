@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -e
+set -euo pipefail
 
 # Colors for output
 green='\033[0;32m'
@@ -56,6 +56,29 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   fi
 fi
 
+# Minimal Linux package installer (Debian/Ubuntu)
+apt_install() {
+  pkg="$1"
+  if dpkg -s "$pkg" >/dev/null 2>&1; then
+    echo -e "${green}$pkg already installed.${reset}"
+  else
+    echo -e "${yellow}Installing $pkg...${reset}"
+    sudo apt-get update -y >/dev/null 2>&1 || true
+    sudo apt-get install -y "$pkg"
+  fi
+}
+
+# Minimal Arch package installer
+pac_install() {
+  pkg="$1"
+  if pacman -Qi "$pkg" >/dev/null 2>&1; then
+    echo -e "${green}$pkg already installed.${reset}"
+  else
+    echo -e "${yellow}Installing $pkg...${reset}"
+    sudo pacman -Sy --noconfirm "$pkg"
+  fi
+}
+
 # Helper to install a Homebrew package if not present
 brew_install() {
   pkg="$1"
@@ -83,7 +106,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   brew_install neovim
   brew_install tmux
   brew_cask_install alacritty
-  brew_cask_install iterm2  # Add iTerm2 terminal
+  brew_cask_install iterm2 # Add iTerm2 terminal
   brew_install yazi
   brew_install fzf
   brew_install ripgrep
@@ -92,9 +115,36 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   brew_install ruby
   brew_install markdownlint-cli
   brew_install markdownlint-cli2
+  brew_install eza
+  brew_install zoxide
+  brew_install thefuck
+  brew_install node
   # Install Nerd Fonts for Alacritty and iTerm2
-  brew tap homebrew/cask-fonts
+  brew tap homebrew/cask-fonts >/dev/null 2>&1 || true
   brew_cask_install font-meslo-lg-nerd-font
+elif command -v apt-get >/dev/null 2>&1; then
+  apt_install neovim
+  apt_install tmux
+  apt_install fzf
+  apt_install ripgrep
+  apt_install bat
+  apt_install fd-find
+  apt_install git
+  # markdownlint-cli2 via npm if desired; leave to user on Linux
+elif command -v pacman >/dev/null 2>&1; then
+  pac_install neovim
+  pac_install tmux
+  pac_install fzf
+  pac_install ripgrep
+  pac_install bat
+  pac_install fd
+  pac_install git
+  pac_install yazi
+  pac_install eza
+  pac_install zoxide
+  pac_install thefuck
+  pac_install nodejs
+  pac_install npm
 fi
 
 # Install LazyGit (if not present)
@@ -102,6 +152,8 @@ if ! command -v lazygit >/dev/null 2>&1; then
   echo -e "${yellow}Installing LazyGit...${reset}"
   if [[ "$OSTYPE" == "darwin"* ]]; then
     brew_install lazygit
+  elif command -v pacman >/dev/null 2>&1; then
+    pac_install lazygit
   else
     echo -e "${yellow}Please install LazyGit manually for your OS.${reset}"
   fi
@@ -115,7 +167,9 @@ if [ -d "$TMUX_TPM" ]; then
   echo -e "${green}==> Installing Tmux plugins with TPM...${reset}"
   bash "$TMUX_TPM/bin/install_plugins"
 else
-  echo -e "${yellow}TPM not found at $TMUX_TPM. Please ensure TPM is cloned for Tmux plugin management.${reset}"
+  echo -e "${yellow}TPM not found at $TMUX_TPM. Cloning TPM...${reset}"
+  git clone https://github.com/tmux-plugins/tpm "$TMUX_TPM" && bash "$TMUX_TPM/bin/install_plugins" ||
+    echo -e "${yellow}Could not clone TPM (check git/network). Skipping TPM install.${reset}"
 fi
 
 # Optionally, pre-install Neovim plugins (headless)
@@ -158,9 +212,10 @@ if [ -d "$DEVLOG_DIR" ]; then
   fi
   if command -v bundle >/dev/null 2>&1; then
     echo -e "${green}==> Installing Devlog Ruby gems (bundle install)...${reset}"
-    ( cd "$DEVLOG_DIR" && bundle install ) || true
+    (cd "$DEVLOG_DIR" && bundle install) || true
   fi
   echo -e "${green}Devlog ready. To serve locally: cd \"$DEVLOG_DIR\" && bundle exec jekyll serve${reset}"
 fi
 
-echo -e "${green}All done! Please restart your terminal or source your shell config.${reset}" 
+echo -e "${green}All done! Please restart your terminal or source your shell config.${reset}"
+
