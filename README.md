@@ -102,7 +102,7 @@ This repository includes custom configurations for:
 ### 2. Clone the Repository
 
 ```sh
-git clone https://github.com/yourusername/dotfiles.git
+git clone https://github.com/IntScription/dotfiles.git
 cd dotfiles
 ```
 
@@ -248,4 +248,4 @@ MIT License.
 
 ---
 
-Happy hacking! 🚀
+Happy coding! 🚀
