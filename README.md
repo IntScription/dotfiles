@@ -17,7 +17,7 @@ To set up your full development environment on a fresh macOS machine:
 2. **Clone this repository:**
 
    ```sh
-   git clone https://github.com/yourusername/dotfiles.git
+   git clone https://github.com/IntScription/dotfiles.git
    cd dotfiles
    ```
 
