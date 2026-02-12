@@ -10,39 +10,23 @@ reset='\033[0m'
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKUP_DIR="$DOTFILES_DIR/backup_$(date +%Y%m%d_%H%M%S)"
 
-# List of configs to symlink: (source, target)
-declare -A DOTS=(
-  ["$DOTFILES_DIR/config/nvim"]="$HOME/.config/nvim"
-  ["$DOTFILES_DIR/config/tmux"]="$HOME/.config/tmux"
-  ["$DOTFILES_DIR/config/alacritty"]="$HOME/.config/alacritty"
-  ["$DOTFILES_DIR/config/yazi"]="$HOME/.config/yazi"
-)
-
-# Zsh config
-ZSHRC_SRC="$DOTFILES_DIR/config/zsh/.zshrc"
-ZSHRC_TARGET="$HOME/.zshrc"
-
-# Function to backup and symlink
-do_link() {
-  src="$1"
-  target="$2"
-  if [ -e "$target" ] || [ -L "$target" ]; then
-    echo -e "${yellow}Backing up $target to $BACKUP_DIR${reset}"
-    mkdir -p "$BACKUP_DIR"
-    mv "$target" "$BACKUP_DIR/" || true
+# Stow-based setup
+if ! command -v stow >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo -e "${yellow}GNU stow not found. Installing via Homebrew...${reset}"
+    brew install stow
+  else
+    echo -e "${yellow}GNU stow is not installed. Please install it first (e.g. 'brew install stow' on macOS). Skipping stow step.${reset}"
   fi
-  ln -sfn "$src" "$target"
-  echo -e "${green}Linked $src -> $target${reset}"
-}
+fi
 
-echo -e "${green}==> Symlinking config directories...${reset}"
-for src in "${!DOTS[@]}"; do
-  do_link "$src" "${DOTS[$src]}"
-done
-
-# Zsh config
-if [ -f "$ZSHRC_SRC" ]; then
-  do_link "$ZSHRC_SRC" "$ZSHRC_TARGET"
+if command -v stow >/dev/null 2>&1; then
+  echo -e "${green}==> Stowing dotfiles...${reset}"
+  for pkg in zsh nvim tmux alacritty yazi; do
+    if [ -d "$DOTFILES_DIR/$pkg" ]; then
+      stow -v -t "$HOME" -d "$DOTFILES_DIR" "$pkg"
+    fi
+  done
 fi
 
 # Tmux: fallback so older tmux or reload (bind r) finds config
@@ -51,7 +35,7 @@ if [ -f "$HOME/.config/tmux/tmux.conf" ]; then
   echo -e "${green}Linked ~/.tmux.conf -> ~/.config/tmux/tmux.conf${reset}"
 fi
 
-# Install Homebrew (macOS only)
+# Install Homebrew and packages (macOS only)
 if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v brew >/dev/null 2>&1; then
     echo -e "${yellow}Homebrew not found. Installing Homebrew...${reset}"
@@ -59,6 +43,11 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     eval "$($(brew --prefix)/bin/brew shellenv)"
   else
     echo -e "${green}Homebrew already installed.${reset}"
+  fi
+
+  if [ -f "$DOTFILES_DIR/Brewfile" ]; then
+    echo -e "${green}==> Installing Homebrew packages from Brewfile...${reset}"
+    brew bundle --file="$DOTFILES_DIR/Brewfile"
   fi
 fi
 
@@ -85,50 +74,8 @@ pac_install() {
   fi
 }
 
-# Helper to install a Homebrew package if not present
-brew_install() {
-  pkg="$1"
-  if ! brew list --formula | grep -q "^$pkg$"; then
-    echo -e "${yellow}Installing $pkg...${reset}"
-    brew install "$pkg"
-  else
-    echo -e "${green}$pkg already installed.${reset}"
-  fi
-}
-
-# Helper to install a Homebrew cask if not present
-brew_cask_install() {
-  cask="$1"
-  if ! brew list --cask | grep -q "^$cask$"; then
-    echo -e "${yellow}Installing $cask...${reset}"
-    brew install --cask "$cask"
-  else
-    echo -e "${green}$cask already installed.${reset}"
-  fi
-}
-
-# Install core tools and fonts (macOS only)
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  brew_install neovim
-  brew_install tmux
-  brew_cask_install alacritty
-  brew_cask_install iterm2 # Add iTerm2 terminal
-  brew_install yazi
-  brew_install fzf
-  brew_install ripgrep
-  brew_install bat
-  brew_install fd
-  brew_install ruby
-  brew_install markdownlint-cli
-  brew_install markdownlint-cli2
-  brew_install eza
-  brew_install zoxide
-  brew_install thefuck
-  brew_install node
-  # Install Nerd Fonts for Alacritty and iTerm2
-  brew tap homebrew/cask-fonts >/dev/null 2>&1 || true
-  brew_cask_install font-meslo-lg-nerd-font
-elif command -v apt-get >/dev/null 2>&1; then
+# Core tools on Linux (apt / pacman)
+if command -v apt-get >/dev/null 2>&1; then
   apt_install neovim
   apt_install tmux
   apt_install fzf
@@ -151,20 +98,6 @@ elif command -v pacman >/dev/null 2>&1; then
   pac_install thefuck
   pac_install nodejs
   pac_install npm
-fi
-
-# Install LazyGit (if not present)
-if ! command -v lazygit >/dev/null 2>&1; then
-  echo -e "${yellow}Installing LazyGit...${reset}"
-  if [[ "$OSTYPE" == "darwin"* ]]; then
-    brew_install lazygit
-  elif command -v pacman >/dev/null 2>&1; then
-    pac_install lazygit
-  else
-    echo -e "${yellow}Please install LazyGit manually for your OS.${reset}"
-  fi
-else
-  echo -e "${green}LazyGit already installed.${reset}"
 fi
 
 # Install Tmux plugins automatically using TPM

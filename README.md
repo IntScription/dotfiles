@@ -30,10 +30,10 @@ To set up your full development environment on a fresh macOS machine:
 
 This will:
 
-- Install all essential tools: Neovim, Tmux, Alacritty, Yazi, fzf, ripgrep,
-  bat, fd, LazyGit, and iTerm2
-- Install Nerd Fonts for beautiful terminal glyphs
-- Symlink all your configuration files (backing up any existing ones)
+- Install Homebrew (if needed) and then all tools from the `Brewfile` via
+  `brew bundle`
+- Use **GNU stow** to symlink all configuration files from this repo into your
+  home directory
 - Automatically install Tmux plugins and Neovim plugins
 - Clone and bootstrap my Devlog (Jekyll) site at
   `~/projects/learning/devlog`
@@ -77,14 +77,19 @@ This repository includes custom configurations for:
 
 ```sh
 .
-├── config
-│   ├── alacritty
-│   ├── backup
-│   ├── nvim
-│   ├── tmux
-│   └── yazi
+├── zsh/
+│   └── .zshrc
+├── nvim/
+│   └── .config/nvim/
+├── tmux/
+│   └── .config/tmux/
+├── alacritty/
+│   └── .config/alacritty/
+├── yazi/
+│   └── .config/yazi/
+├── Brewfile
 ├── coolnight.itermcolors
-├── package-lock.json
+├── scripts/
 ├── README.md
 └── install.sh
 ```
@@ -110,10 +115,10 @@ cd dotfiles
 
 This will:
 
-- Backup any existing configs to a timestamped backup folder
-- Symlink the new configs to your home directory
 - Install Homebrew (if not present, macOS only)
-- Install LazyGit (if not present)
+- Use `brew bundle` with the `Brewfile` to install CLI tools, GUI apps, and
+  fonts
+- Use GNU stow to symlink the configs in this repo into your `$HOME`
 
 ```sh
 chmod +x install.sh
@@ -198,11 +203,19 @@ Preview Markdown in-browser with `iamcco/markdown-preview.nvim`:
 
 Keymap: `<leader>mp`.
 
-## 🍺 Homebrew Installation (macOS)
+## 🍺 Homebrew & Brewfile (macOS)
 
 If you don't have Homebrew, the `install.sh` script will install it for you.
 Homebrew is the recommended package manager for macOS and is used to install
 tools like LazyGit.
+
+This repo also includes a `Brewfile`, so `install.sh` can run:
+
+```sh
+brew bundle --file=Brewfile
+```
+
+to install all of your CLI tools, GUI apps, and fonts in one go.
 
 ---
 
@@ -222,14 +235,21 @@ tools like LazyGit.
 
 ---
 
-## 🔗 How the Symlinking Works
+## 🔗 How `stow` Symlinking Works
 
-- Existing configs are backed up to a `backup_YYYYMMDD_HHMMSS` folder in the
-  repo.
-- New configs are symlinked from the repo to your `~/.config` directory (and
-  `~/.zshrc`).
+- Each top-level folder (`zsh`, `nvim`, `tmux`, `alacritty`, `yazi`, …) is a
+  **stow package**.
+- Inside each package, the directory structure mirrors the final location under
+  your `$HOME` (for example, `nvim/.config/nvim`, `tmux/.config/tmux`).
+- Running:
+
+  ```sh
+  stow -t "$HOME" zsh nvim tmux alacritty yazi
+  ```
+
+  from the repo root creates symlinks from this repo into your home directory.
 - This makes it easy to update configs by just pulling changes and re-running
-  the script.
+  the script (or re-stowing specific packages).
 
 ---
 
