@@ -7,8 +7,17 @@ green='\033[0;32m'
 yellow='\033[1;33m'
 reset='\033[0m'
 
+if [[ "${1:-}" == "--help" ]]; then
+  cat <<EOF
+Usage:
+  ./install.sh                 Run normal install
+  DRY_RUN=1 ./install.sh       Preview stow changes (no filesystem writes)
+  SETUP_DEVLOG=1 ./install.sh  Setup devlog project (Jekyll site)
+EOF
+  exit 0
+fi
+
 DOTFILES_DIR="$(cd "$(dirname "$0")" && pwd)"
-BACKUP_DIR="$DOTFILES_DIR/backup_$(date +%Y%m%d_%H%M%S)"
 
 # Stow-based setup
 if ! command -v stow >/dev/null 2>&1; then
@@ -21,18 +30,19 @@ if ! command -v stow >/dev/null 2>&1; then
 fi
 
 if command -v stow >/dev/null 2>&1; then
+  STOW_FLAGS="-v"
+  if [[ "${DRY_RUN:-0}" == "1" ]]; then
+    STOW_FLAGS="-n -v"
+    echo -e "${yellow}Running stow in dry-run mode (no changes will be made).${reset}"
+  fi
+
   echo -e "${green}==> Stowing dotfiles...${reset}"
   for pkg in zsh nvim tmux alacritty yazi; do
     if [ -d "$DOTFILES_DIR/$pkg" ]; then
-      stow -v -t "$HOME" -d "$DOTFILES_DIR" "$pkg"
+      echo -e "${green}→ Stowing $pkg${reset}"
+      stow "${STOW_FLAGS}" -t "$HOME" -d "$DOTFILES_DIR" "$pkg"
     fi
   done
-fi
-
-# Tmux: fallback so older tmux or reload (bind r) finds config
-if [ -f "$HOME/.config/tmux/tmux.conf" ]; then
-  ln -sfn "$HOME/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
-  echo -e "${green}Linked ~/.tmux.conf -> ~/.config/tmux/tmux.conf${reset}"
 fi
 
 # Install Homebrew and packages (macOS only)
@@ -40,7 +50,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v brew >/dev/null 2>&1; then
     echo -e "${yellow}Homebrew not found. Installing Homebrew...${reset}"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    eval "$($(brew --prefix)/bin/brew shellenv)"
+    # Try common locations for brew shellenv
+    if command -v brew >/dev/null 2>&1; then
+      eval "$(/opt/homebrew/bin/brew shellenv)" 2>/dev/null || \
+      eval "$(/usr/local/bin/brew shellenv)" 2>/dev/null || \
+      eval "$($(brew --prefix)/bin/brew shellenv)"
+    fi
   else
     echo -e "${green}Homebrew already installed.${reset}"
   fi
@@ -52,13 +67,17 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 fi
 
 # Minimal Linux package installer (Debian/Ubuntu)
+APT_UPDATED=0
 apt_install() {
   pkg="$1"
   if dpkg -s "$pkg" >/dev/null 2>&1; then
     echo -e "${green}$pkg already installed.${reset}"
   else
     echo -e "${yellow}Installing $pkg...${reset}"
-    sudo apt-get update -y >/dev/null 2>&1 || true
+    if [ "$APT_UPDATED" -eq 0 ]; then
+      sudo apt-get update -y >/dev/null 2>&1 || true
+      APT_UPDATED=1
+    fi
     sudo apt-get install -y "$pkg"
   fi
 }
@@ -120,41 +139,45 @@ else
 fi
 
 # Ensure scripts are executable
-chmod +x "$DOTFILES_DIR/scripts/fix_markdown.sh" 2>/dev/null || true
+[ -f "$DOTFILES_DIR/scripts/fix_markdown.sh" ] && \
+  chmod +x "$DOTFILES_DIR/scripts/fix_markdown.sh"
 
-# Setup Devlog repository (clone or update) and install Jekyll deps
-DEVLOG_REPO_URL="https://github.com/IntScription/devlog.git"
-DEVLOG_DIR="$HOME/projects/learning/devlog"
-DEVLOG_PARENT_DIR="$(dirname "$DEVLOG_DIR")"
+# Setup Devlog repository (clone or update) and install Jekyll deps (opt-in)
+if [[ "${SETUP_DEVLOG:-0}" == "1" ]]; then
+  DEVLOG_REPO_URL="https://github.com/IntScription/devlog.git"
+  DEVLOG_DIR="$HOME/projects/learning/devlog"
+  DEVLOG_PARENT_DIR="$(dirname "$DEVLOG_DIR")"
 
-echo -e "${green}==> Setting up Devlog at $DEVLOG_DIR...${reset}"
-mkdir -p "$DEVLOG_PARENT_DIR"
-if [ -d "$DEVLOG_DIR/.git" ]; then
-  echo -e "${green}Devlog repo exists. Pulling latest changes...${reset}"
-  git -C "$DEVLOG_DIR" pull --rebase --autostash || git -C "$DEVLOG_DIR" pull --rebase || true
-elif [ -d "$DEVLOG_DIR" ]; then
-  echo -e "${yellow}$DEVLOG_DIR exists but is not a git repo. Skipping clone.${reset}"
-else
-  echo -e "${green}Cloning Devlog repo...${reset}"
-  git clone "$DEVLOG_REPO_URL" "$DEVLOG_DIR"
-fi
+  echo -e "${green}==> Setting up Devlog at $DEVLOG_DIR...${reset}"
+  mkdir -p "$DEVLOG_PARENT_DIR"
+  if [ -d "$DEVLOG_DIR/.git" ]; then
+    echo -e "${green}Devlog repo exists. Pulling latest changes...${reset}"
+    git -C "$DEVLOG_DIR" pull --rebase --autostash || git -C "$DEVLOG_DIR" pull --rebase || true
+  elif [ -d "$DEVLOG_DIR" ]; then
+    echo -e "${yellow}$DEVLOG_DIR exists but is not a git repo. Skipping clone.${reset}"
+  else
+    echo -e "${green}Cloning Devlog repo...${reset}"
+    git clone "$DEVLOG_REPO_URL" "$DEVLOG_DIR"
+  fi
 
-if [ -d "$DEVLOG_DIR" ]; then
-  # Ensure bundler is available, then install gems
-  if ! command -v bundle >/dev/null 2>&1; then
-    if command -v gem >/dev/null 2>&1; then
-      echo -e "${yellow}Bundler not found. Installing bundler gem...${reset}"
-      gem install bundler || true
-    else
-      echo -e "${yellow}RubyGems not available. Please ensure Ruby is installed if you plan to serve the site locally.${reset}"
+  if [ -d "$DEVLOG_DIR" ]; then
+    # Ensure bundler is available, then install gems
+    if ! command -v bundle >/dev/null 2>&1; then
+      if command -v gem >/dev/null 2>&1; then
+        echo -e "${yellow}Bundler not found. Installing bundler gem...${reset}"
+        gem install bundler || true
+      else
+        echo -e "${yellow}RubyGems not available. Please ensure Ruby is installed if you plan to serve the site locally.${reset}"
+      fi
     fi
+    if command -v bundle >/dev/null 2>&1; then
+      echo -e "${green}==> Installing Devlog Ruby gems (bundle install)...${reset}"
+      (cd "$DEVLOG_DIR" && bundle install) || true
+    fi
+    echo -e "${green}Devlog ready. To serve locally: cd \"$DEVLOG_DIR\" && bundle exec jekyll serve${reset}"
   fi
-  if command -v bundle >/dev/null 2>&1; then
-    echo -e "${green}==> Installing Devlog Ruby gems (bundle install)...${reset}"
-    (cd "$DEVLOG_DIR" && bundle install) || true
-  fi
-  echo -e "${green}Devlog ready. To serve locally: cd \"$DEVLOG_DIR\" && bundle exec jekyll serve${reset}"
 fi
 
-echo -e "${green}All done! Please restart your terminal or source your shell config.${reset}"
-
+echo
+echo -e "${green}✔ Dotfiles installed successfully.${reset}"
+echo -e "${green}✔ Restart your shell or run: source ~/.zshrc${reset}"
