@@ -206,6 +206,22 @@ tools like LazyGit.
 
 ---
 
+## 🔧 Troubleshooting
+
+- **Tmux using default config**: Tmux 3.1+ reads `~/.config/tmux/tmux.conf`. This
+  repo uses `config/tmux/tmux.conf`. If you get “No such file or directory” when
+  sourcing, (re)create the symlinks from the repo root:
+  `ln -sfn "$(pwd)/config/tmux" "$HOME/.config/tmux"` and
+  `ln -sfn "$HOME/.config/tmux/tmux.conf" "$HOME/.tmux.conf"`. Then run
+  `tmux source-file ~/.config/tmux/tmux.conf` or restart tmux.
+- **Neovim closes on H or yank with “kill” in terminal**: If pressing H (e.g. in
+  neo-tree to toggle hidden) or yanking closes nvim and the terminal shows “kill”,
+  check what’s mapped: in nvim run `:verbose map H` and `:verbose map y`. Test
+  without plugins: `nvim -u NONE` and try H/y again. In iTerm2, check Keys →
+  Key Mappings for anything bound to H or y that might send a control character.
+
+---
+
 ## 🔗 How the Symlinking Works
 
 - Existing configs are backed up to a `backup_YYYYMMDD_HHMMSS` folder in the

@@ -20,7 +20,7 @@ normal.family = "MesloLGS Nerd Font Mono"
 size = 24
 
 [general]
-import = ["~/.config/alacritty/themes/themes/coolnight.toml"]
+import = ["~/.config/alacritty/themes/coolnight.toml"]
 
 #for video
 # size = 35.0

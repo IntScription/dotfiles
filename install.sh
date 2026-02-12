@@ -45,6 +45,12 @@ if [ -f "$ZSHRC_SRC" ]; then
   do_link "$ZSHRC_SRC" "$ZSHRC_TARGET"
 fi
 
+# Tmux: fallback so older tmux or reload (bind r) finds config
+if [ -f "$HOME/.config/tmux/tmux.conf" ]; then
+  ln -sfn "$HOME/.config/tmux/tmux.conf" "$HOME/.tmux.conf"
+  echo -e "${green}Linked ~/.tmux.conf -> ~/.config/tmux/tmux.conf${reset}"
+fi
+
 # Install Homebrew (macOS only)
 if [[ "$OSTYPE" == "darwin"* ]]; then
   if ! command -v brew >/dev/null 2>&1; then
