@@ -1,106 +1,94 @@
 -- Options are automatically loaded before lazy.nvim startup
--- Default options that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
--- Add any additional options here
--- 🗂️ Tree-style file view
-vim.cmd("let g:netrw_liststyle = 3")
+-- Default options that are always set:
+-- https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/options.lua
 
--- 🔑 Leader key
-vim.g.mapleader = " "
+-- Tree-style file view
+vim.g.netrw_liststyle = 3
 
--- 🌐 Encoding
-vim.opt.encoding = "utf-8"
-vim.opt.fileencoding = "utf-8"
-
--- 🔢 Line Numbers
+-- Line numbers
 vim.opt.number = true
 vim.opt.relativenumber = true
 
--- 📝 Tabs & Indentation
+-- Tabs & indentation
 vim.opt.tabstop = 2
 vim.opt.shiftwidth = 2
 vim.opt.expandtab = true
 vim.opt.autoindent = true
 vim.opt.smartindent = true
-vim.opt.smarttab = true
 vim.opt.breakindent = true
 
--- 📜 Wrapping
+-- Wrapping
 vim.opt.wrap = false
 
--- 🔍 Searching
+-- Searching
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 vim.opt.incsearch = true
 vim.opt.hlsearch = true
 vim.opt.inccommand = "split"
 
--- 💡 UI & Cursor
+-- UI
 vim.opt.cursorline = true
 vim.opt.signcolumn = "yes"
 vim.opt.showmatch = true
 vim.opt.showmode = false
-vim.opt.showcmd = true
-vim.opt.cmdheight = vim.fn.has("nvim-0.8") == 1 and 0 or 1
+vim.opt.cmdheight = 0
 vim.opt.laststatus = 3
 vim.opt.scrolloff = 10
-vim.opt.winbar = "%=%m %f"
 
--- 🎨 Colors
+-- Colors
 vim.opt.termguicolors = true
 vim.opt.background = "dark"
 
--- 🔙 Backspace
+-- Backspace
 vim.opt.backspace = { "start", "eol", "indent" }
 
--- 📋 Clipboard
-vim.opt.clipboard:append("unnamedplus")
+-- Clipboard
+vim.opt.clipboard = "unnamedplus"
 
--- 🪟 Splits
+-- Splits
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.splitkeep = "cursor"
 
--- 🖱️ Mouse (disabled for keyboard-only users; change to 'a' if needed)
+-- Mouse
 vim.opt.mouse = "a"
 
--- 🧠 Completion Timing
+-- Timing
 vim.opt.updatetime = 300
 vim.opt.timeoutlen = 500
 
--- 💾 Swap & Undo
+-- Swap & undo
 vim.opt.swapfile = false
 vim.opt.undofile = true
 vim.opt.backup = false
 vim.opt.backupskip = { "/tmp/*", "/private/tmp/*" }
 
--- 🧭 Shell
+-- Shell
 vim.opt.shell = "zsh"
 
--- 🧠 Wildignore & Path
+-- Path & ignore
 vim.opt.path:append({ "**" })
 vim.opt.wildignore:append({ "*/node_modules/*" })
 
--- 🧙 Persistent Sessions
-vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,terminal,localoptions"
+-- Sessions
+vim.o.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize,winpos,localoptions"
 
--- ✨ Undercurl
-vim.cmd([[let &t_Cs = "\e[4:3m"]])
-vim.cmd([[let &t_Ce = "\e[4:0m"]])
-
--- 🟨 Comment formatting
+-- Comment formatting
 vim.opt.formatoptions:append({ "r" })
 
--- 📁 Filetype Detection
-vim.cmd([[au BufNewFile,BufRead *.astro setf astro]])
-vim.cmd([[au BufNewFile,BufRead Podfile setf ruby]])
-
+-- Filetypes
 vim.filetype.add({
   extension = {
+    astro = "astro",
     mdx = "mdx",
+  },
+  filename = {
+    Podfile = "ruby",
   },
 })
 
--- ⚙️ LazyVim globals (optional)
+-- LazyVim globals
 vim.g.lazyvim_prettier_needs_config = true
 vim.g.lazyvim_picker = "telescope"
 vim.g.lazyvim_cmp = "blink.cmp"

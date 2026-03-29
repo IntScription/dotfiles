@@ -1,11 +1,10 @@
 return {
   {
     "folke/noice.nvim",
-    opts = {
-      lsp = {
-        hover = { enabled = false },
-        signature = { enabled = false },
-      },
-    },
+    opts = function(_, opts)
+      opts.lsp = opts.lsp or {}
+      opts.lsp.hover = { enabled = false }
+      opts.lsp.signature = { enabled = false }
+    end,
   },
 }
