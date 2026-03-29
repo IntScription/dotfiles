@@ -127,17 +127,20 @@ eval "$(mise activate zsh)"
 # ░░ Yazi Integration ░░
 # ────────────────────────────────────────────────
 
-# Renamed from y() to yz() to avoid conflict with neo-tree's y key (yank/copy)
-function yz() {
+function y() {
   local tmp="$(mktemp -t yazi-cwd.XXXXXX)" cwd
   yazi "$@" --cwd-file="$tmp"
-  if cwd="$(<"$tmp")" && [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
-    builtin cd -- "$cwd"
+
+  if [ -f "$tmp" ]; then
+    cwd="$(<"$tmp")"
+    if [ -n "$cwd" ] && [ "$cwd" != "$PWD" ]; then
+      builtin cd -- "$cwd"
+    fi
+    rm -f -- "$tmp"
   fi
-  rm -f -- "$tmp"
 }
 # Alias for backward compatibility (but won't conflict with single 'y' key)
-alias yazi-launch="yz"
+alias yazi-launch="y"
 
 # ────────────────────────────────────────────────
 # ░░ Devlog Helper ░░
