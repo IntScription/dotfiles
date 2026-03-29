@@ -1,8 +1,42 @@
+# ==============================
+# Neovim core
+# ==============================
+
+# Local state / cache
+.local/
+.cache/
+.state/
+.nvim/
+
+# Lazy / plugins (VERY important)
+lazy-lock.json
+lazy/
+
+# LSP / logs
+*.log
+*.tmp
+
+# Treesitter compiled parsers
+parser/
+
+# Swap / backup
+*.swp
+*.swo
+
+# ==============================
+# macOS
+# ==============================
+
+.DS_Store
+
+# ==============================
+# Misc (your existing)
+# ==============================
+
 tt.*
 .tests
 doc/tags
 debug
 .repro
 foo.*
-*.log
 data
