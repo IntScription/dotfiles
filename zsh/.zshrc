@@ -335,3 +335,4 @@ fpath=(/Users/kartiksanil/.docker/completions $fpath)
 autoload -Uz compinit
 compinit
 # End of Docker CLI completions
+export PATH="$(brew --prefix rustup)/bin:$PATH"
