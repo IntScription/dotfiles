@@ -28,6 +28,8 @@ return {
         local selection_bg = c.bg_highlight
         local subtle_border = c.dark3
         local strong_border = c.blue
+        local winbar_fg = c.fg
+        local winbar_muted = c.dark5
 
         -- Fallback-safe diagnostic colors
         local error = c.error or "#db4b4b"
@@ -54,8 +56,8 @@ return {
         -- Statusline / winbar
         hl.StatusLine = { bg = transparent }
         hl.StatusLineNC = { bg = transparent }
-        hl.WinBar = { bg = transparent }
-        hl.WinBarNC = { bg = transparent }
+        hl.WinBar = { bg = transparent, fg = winbar_fg, bold = true }
+        hl.WinBarNC = { bg = transparent, fg = winbar_muted }
 
         -- Floats
         hl.NormalFloat = { bg = float_bg }
