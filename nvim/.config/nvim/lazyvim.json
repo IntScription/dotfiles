@@ -1,6 +1,7 @@
 {
   "extras": [
-
+    "lazyvim.plugins.extras.editor.aerial",
+    "lazyvim.plugins.extras.ui.treesitter-context"
   ],
   "install_version": 8,
   "news": {
